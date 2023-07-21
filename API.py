@@ -222,6 +222,7 @@ def compare(current,past):
         "very high" :3,
         "high":2,
         "border":1,
+        "medium":1,
         "low":0,
         "":-1
     }
@@ -268,11 +269,11 @@ def Notify(patient_id):
     
     if "ailment_history" in patient_data:
         if len(patient_data["ailment_history"]) > 1:
-            old = patient_data["ailment_history"][-2]
-            new = patient_data["ailment_history"][-1]
+            old = patient_data["ailment_history"][-2]["severity"]
+            new = patient_data["ailment_history"][-1]["severity"]
         else:
-            new = patient_data["ailment_history"][-1]
-            old = patient_data["ailment_history"][-1]
+            new = patient_data["ailment_history"][-1]["severity"]
+            old = patient_data["ailment_history"][-1]["severity"]
 
 
     
@@ -282,7 +283,7 @@ def Notify(patient_id):
     print(change)
     # return {"response":"hello"}
     trait=''
-    if change >0:
+    if change >=0:
         # choose random intro
         userquery = random.choice((change_bh['positive'])) + "{}".format(trait)
         # model.gen(userquery,)
