@@ -10,6 +10,8 @@ import torch
 from transformers import BioGptTokenizer, BioGptForCausalLM, set_seed
 from fastapi.middleware.cors import CORSMiddleware
 
+import pandas as pd
+from fuzzywuzzy import fuzz
 
 app = FastAPI()
 app.add_middleware(
@@ -46,7 +48,6 @@ gen = pipeline(model=model_bot, tokenizer=tokenizer_bot, task='text-generation',
 tokenizer_art = BioGptTokenizer.from_pretrained("microsoft/biogpt")
 model_art = BioGptForCausalLM.from_pretrained("microsoft/biogpt")
 
-print()
 
 special_token = "#"
 
@@ -91,16 +92,16 @@ negative=['Navigating the Complications of Living with Diabetes'
 
 model_intro = {
     "Intro 1":
-"Beep! Your health comes first. Stay informed and cared for with our medical phone notifications."
+"Beep! Your health comes first. Stay informed."
 
 ,"Intro 2":
-"Buzz, buzz! Our medical phone notifications are your personalized health assistants, always by your side."
+"Buzz, buzz! your personalized health assistants, always by your side."
 
 ,"Intro 3":
-"Stay on top of your medical needs with the gentle reminders of our health-focused phone notifications."
+"Stay on top of your medical needs with the gentle reminders "
 
 ,"Intro 4":
-"Be alerted to important health updates with the reassuring tones of our medical phone notifications."
+"Be alerted to important health updates "
 
 ,"Intro 5":
 "Your well-being matters. Let our medical phone notifications guide you towards a healthier tomorrow."
@@ -109,13 +110,10 @@ model_intro = {
 "Experience the power of knowledge with our medical phone notifications, tailored to your health goals."
 
 ,"Intro 7":
-"Stay connected to your healthcare journey. Embrace the support of our medical phone notifications."
+"Stay connected to your healthcare journey."
 
 ,"Intro 8":
-"From medication reminders to vital health insights, our medical phone notifications have you covered."
-
-,"Intro 9":
-"Unlock a world of better health with our intelligent medical phone notifications at your fingertips."
+"From medication reminders to vital health insights"
 
 ,"Intro 10":
 "Your health, our priority. Trust our medical phone notifications to keep you in the pink of health."
@@ -135,12 +133,23 @@ class not_item(BaseModel):
     # current : Optional[str]
     # old:Optional[str]
     # trait:Optional[str]
+    min_len : Optional[int] = 150
+    max_len : Optional[int] = 1024
     patient_id : int
 
 class art_item(BaseModel):
     keyword : str
     min_len : Optional[int] = 150
     max_len : Optional[int] = 1024
+
+class recommend_item(BaseModel):
+    # input_symptoms:str 
+    # input_disease:str 
+    # input_doctor:str 
+    # input_department:str 
+    # input_severity:str
+    # input_medical_test:str
+    patient_id :int
 
 def find_relevance(old,new):
     currentQuery = "<|user|>are these two issues connected or related? {} and  {} . If yes then provide a number between 0 to 1 representing percentage of relevance of the two issues<|eos|><|ai|>".format(old,new)
@@ -200,22 +209,22 @@ def mainBot_2(query):
     except :
         return {"response":'Sorry i could not understand you'}
 
-def contentGenerate(query,min_len,max_len):
-    try :
-        global tokenizer_art, model_art
-        inputs = tokenizer_art(query, return_tensors="pt")
-        set_seed(42)
-        with torch.no_grad():
-            beam_output = model_art.generate(**inputs,
-                                        min_length=min_len,
-                                        max_length=max_len,
-                                        num_beams=5,
-                                        early_stopping=True
-                                        )
-        response = tokenizer_art.decode(beam_output[0], skip_special_tokens=True)
-        return { "article":response }
-    except :
-        return {"article" : ""}
+# def contentGenerate(query,min_len,max_len):
+#     try :
+#         global tokenizer_art, model_art
+#         inputs = tokenizer_art(query, return_tensors="pt")
+#         set_seed(42)
+#         with torch.no_grad():
+#             beam_output = model_art.generate(**inputs,
+#                                         min_length=min_len,
+#                                         max_length=max_len,
+#                                         num_beams=5,
+#                                         early_stopping=True
+#                                         )
+#         response = tokenizer_art.decode(beam_output[0], skip_special_tokens=True)
+#         return { "article":response }
+#     except :
+#         return {"article" : ""}
     
 def compare(current,past):
     mapsevere = {
@@ -260,35 +269,52 @@ def compare(current,past):
 #     except :
 #         return {"headline":headline,"article" : ""}
 
-def Notify(patient_id):
+def Notify(patient_id,min_len,max_len):
     print("notify called")
-    print(patient_id)
+    # print(patient_id)
     # patient_data = collection.find({"id":patient_id})
+    patient_data=''
+    print(patient_id)
     for i in collection.find({"id":patient_id}):
         patient_data = i
-    
-    if "ailment_history" in patient_data:
-        if len(patient_data["ailment_history"]) > 1:
-            old = patient_data["ailment_history"][-2]["severity"]
-            new = patient_data["ailment_history"][-1]["severity"]
+    if patient_data == '':
+        print("patient no foun")
+    # print(patient_data)
+    if "ailments" in patient_data:
+        if len(patient_data["ailments"]) > 1:
+            old = patient_data["ailments"][-2]["severity"]
+            new = patient_data["ailments"][-1]["severity"]
         else:
-            new = patient_data["ailment_history"][-1]["severity"]
-            old = patient_data["ailment_history"][-1]["severity"]
+            new = patient_data["ailments"][-1]["severity"]
+            old = patient_data["ailments"][-1]["severity"]
 
 
-    
+    # print(patient_data)
+    trait = patient_data["ailments"][-1]['name']
+    # print(trait)
     headline = random.choice(list(model_intro.values()))
-    print(patient_data)
+    # print(patient_data)
     change = compare(old,new)
     print(change)
-    # return {"response":"hello"}
-    trait=''
+    age = 45
+    ifgender = ''
+    ifage=''
+    # ifinterest=''
+    # ifdisease=''
+    # ifseverity=''
+    # for  aged age gender with severity disease
+    if age < 30:
+        ifage = 'young '
+    elif age> 60 :
+        ifage = 'old'
+    else:
+        ifage = 'middle aged'
+    
+    
     if change >=0:
-        # choose random intro
-        userquery = random.choice((change_bh['positive'])) + "{}".format(trait)
-        # model.gen(userquery,)
+        userquery = random.choice((change_bh['positive'])) + " {} ".format(trait) + "for  {} {}".format(ifage,ifgender) 
     elif change < 0:
-            userquery = random.choice(change_bh['negative']) + "{}".format(trait)
+            userquery = random.choice(change_bh['negative']) + " {} ".format(trait)
     print(userquery)
     try :
         global tokenizer_art, model_art
@@ -296,8 +322,8 @@ def Notify(patient_id):
         set_seed(42)
         with torch.no_grad():
             beam_output = model_art.generate(**inputs,
-                                        min_length=50,
-                                        max_length=300,
+                                        min_length=min_len,
+                                        max_length=max_len,
                                         num_beams=5,
                                         early_stopping=True
                                         )
@@ -305,6 +331,68 @@ def Notify(patient_id):
         return { "headline":headline,"article":response }
     except :
         return {"headline":headline,"article" : ""}
+
+def find_best_match(Id,input_symptoms, input_disease, input_doctor, input_department, input_severity, input_medical_test):
+    patients_data = collection.find() 
+    input_data = {
+        "id":Id,
+        'symptoms': input_symptoms,
+        'disease_name': input_disease,
+        'doctor_name': input_doctor,
+        'department': input_department,
+        'severity': input_severity,
+        'medical_tests': input_medical_test
+        # 'medical_tests': ''
+    }
+
+    if not isinstance(input_data['symptoms'], list):
+        input_data['symptoms'] = [input_data['symptoms']]
+    if not isinstance(input_data['medical_tests'], list):
+        input_data['medical_tests'] = [input_data['medical_tests']]
+
+    similarity_percentages = []
+    for patient_data in patients_data:
+        print(patient_data)
+        if patient_data["id"] != input_data["id"]:
+            patient_scores = []
+            for past_disease in [patient_data['ailments'][-1]["name"]]:
+                symptom_score = fuzz.token_set_ratio(','.join(input_data['symptoms']), ','.join(past_disease["ailments"][-1]['symptoms']))
+                disease_score = fuzz.token_sort_ratio(input_data['disease_name'], past_disease['ailments'][-1]["name"])
+                doctor_score = fuzz.token_sort_ratio(input_data['doctor_name'], past_disease["ailments"][-1]['doctor']["name"])
+                department_score = fuzz.token_sort_ratio(input_data['department'], past_disease["ailments"][-1]['doctor']["type"])
+                severity_score = fuzz.token_sort_ratio(input_data['severity'], past_disease['ailments'][-1]["severity"])
+                medical_tests_score = fuzz.token_set_ratio(','.join(input_data['medical_tests']), ','.join(past_disease['lab_tests']))
+                total_score = (symptom_score + disease_score + doctor_score + department_score + severity_score + medical_tests_score) / 6
+                patient_scores.append(total_score)
+            similarity_percentages.append(max(patient_scores))
+
+    print(similarity_percentages)
+    best_match_index = similarity_percentages.index(max(similarity_percentages))
+    if max(similarity_percentages) < 70:
+      return "No Match"
+    best_match_patient = patients_data[best_match_index]
+
+    return best_match_patient
+
+def Recommend(patient_id):
+    # try:
+        patient_data = dict()
+        for i in collection.find({"id":patient_id}):
+            print("i is",i)
+            patient_data = i
+        input_symptoms = patient_data["ailments"][-1]["symptoms"]
+        input_disease = patient_data["ailments"][-1]["name"]
+        input_doctor = patient_data["ailments"][-1]["doctor"]["name"]
+        input_department = ""
+        input_department = patient_data["ailments"][-1]["doctor"]["type"]
+        input_severity = patient_data["ailments"][-1]["severity"]
+        input_medical_test = patient_data["ailments"][-1]["lab_test"]
+        
+        best_match_patient = find_best_match(patient_id,input_symptoms, input_disease, input_doctor, input_department, input_severity, input_medical_test)
+        print("Best Match:")
+        return (best_match_patient)
+    # except KeyError:
+    #     print("Insufficient data")
 
 @app.get("/")
 def read_root():
@@ -317,10 +405,10 @@ async def botResponse(item:bot_item):
     # print(item)
     return mainBot(item.query)
 
-@app.post("/article/")
-async def content(item:art_item):
-    # print(item)
-    return contentGenerate(item.keyword,item.min_len,item.max_len)
+# @app.post("/article/")
+# async def content(item:art_item):
+#     # print(item)
+#     return contentGenerate(item.keyword,item.min_len,item.max_len)
 
 @app.post("/rel/")
 async def Rel(query1:str,query2:str):
@@ -334,6 +422,8 @@ async def botsResponse(item:bot_item):
 async def notify(item:not_item):
     # return Notify(item.old,item.current,item.trait)
     print("notify called",item)
-    return Notify(item.patient_id)  
-# @app.post("/recommend/")
-# async def recommend()
+    return Notify(item.patient_id,item.min_len,item.max_len)  
+
+@app.post("/recommend/")
+async def recommend(item:recommend_item):
+    return Recommend(item.patient_id)
