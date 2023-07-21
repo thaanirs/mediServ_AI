@@ -5,12 +5,24 @@ from pydantic import BaseModel
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 from opengpt.config import Config
 from opengpt.model_utils import add_tokens_to_model_and_tokenizer
-
-
+import pymongo
 import torch
 from transformers import BioGptTokenizer, BioGptForCausalLM, set_seed
+from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins='*',
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+client = pymongo.MongoClient("mongodb+srv://vedant11:vedant11@gathertube.zku14hn.mongodb.net/")
+db = client["test"]
+collection = db['user_data']
+
 
 config = Config(yaml_path='./example_train_config.yaml')
 
@@ -120,9 +132,10 @@ currentQuery = ''
 class bot_item(BaseModel):
     query : str
 class not_item(BaseModel):
-    current : str
-    old:str
-    trait:str
+    # current : Optional[str]
+    # old:Optional[str]
+    # trait:Optional[str]
+    patient_id : int
 
 class art_item(BaseModel):
     keyword : str
@@ -219,9 +232,44 @@ def compare(current,past):
         return -1
     return 0
 
-def Notify(old,new,trait):
+# def Notify(old,new,trait):
+#     headline = random.choice(list(model_intro.values()))
+#     change = compare(old,new)
+#     if change >0:
+#         # choose random intro
+#         userquery = random.choice((change_bh['positive'])) + "{}".format(trait)
+#         # model.gen(userquery,)
+#     elif change < 0:
+#             userquery = random.choice(change_bh['negative']) + "{}".format(trait)
+#     print(userquery)
+#     try :
+#         global tokenizer_art, model_art
+#         inputs = tokenizer_art(userquery, return_tensors="pt")
+#         set_seed(42)
+#         with torch.no_grad():
+#             beam_output = model_art.generate(**inputs,
+#                                         min_length=50,
+#                                         max_length=300,
+#                                         num_beams=5,
+#                                         early_stopping=True
+#                                         )
+#         response = tokenizer_art.decode(beam_output[0], skip_special_tokens=True)
+#         return { "headline":headline,"article":response }
+#     except :
+#         return {"headline":headline,"article" : ""}
+
+def Notify(patient_id):
+    print(patient_id)
+    patient_data = collection.find({"id":patient_id})
+    old=''
+    new=''
+    
     headline = random.choice(list(model_intro.values()))
+    print(patient_data)
     change = compare(old,new)
+    print(change)
+    # return {"response":"hello"}
+    trait=''
     if change >0:
         # choose random intro
         userquery = random.choice((change_bh['positive'])) + "{}".format(trait)
@@ -245,7 +293,6 @@ def Notify(old,new,trait):
     except :
         return {"headline":headline,"article" : ""}
 
-
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
@@ -266,10 +313,14 @@ async def content(item:art_item):
 async def Rel(query1:str,query2:str):
     return find_relevance(query1,query2)
 
-@app.post("/medibot_2.0")
+@app.post("/medibot_2.0/")
 async def botsResponse(item:bot_item):
     return mainBot_2(item.query)
 
-@app.post("/notification")
+@app.post("/notification/")
 async def notify(item:not_item):
-    return Notify(item.old,item.current,item.trait)
+    # return Notify(item.old,item.current,item.trait)
+    print("notify called",item)
+    return Notify(item.patient_id)  
+# @app.post("/recommend/")
+# async def recommend()
