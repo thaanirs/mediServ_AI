@@ -222,7 +222,8 @@ def compare(current,past):
         "very high" :3,
         "high":2,
         "border":1,
-        "low":0
+        "low":0,
+        "":-1
     }
     current = mapsevere[current]
     past = mapsevere[past]
@@ -259,10 +260,21 @@ def compare(current,past):
 #         return {"headline":headline,"article" : ""}
 
 def Notify(patient_id):
+    print("notify called")
     print(patient_id)
-    patient_data = collection.find({"id":patient_id})
-    old=''
-    new=''
+    # patient_data = collection.find({"id":patient_id})
+    for i in collection.find({"id":patient_id}):
+        patient_data = i
+    
+    if "ailment_history" in patient_data:
+        if len(patient_data["ailment_history"]) > 1:
+            old = patient_data["ailment_history"][-2]
+            new = patient_data["ailment_history"][-1]
+        else:
+            new = patient_data["ailment_history"][-1]
+            old = patient_data["ailment_history"][-1]
+
+
     
     headline = random.choice(list(model_intro.values()))
     print(patient_data)
