@@ -449,13 +449,19 @@ def find_recommended_doctor(patient_id, symptoms, disease, emergency):
 
 def recRec(patient_id):
     patient_id = 1
-    symptoms = ['fever', 'cough']
-    disease = 'Internal Medicine'
-    emergency = False
+    patient_data = ''
+    for i in collection.find({"id":patient_id}):
+        patient_data = i
+    if "ailments" in patient_data:
+        symptoms = patient_data["ailments"][-1]['symptoms']
+        disease = patient_data["ailments"][-1]['name']
+        emergency = False
 
-    recommended_doctor = find_recommended_doctor(patient_id, symptoms, disease, emergency)
-    print("Recommended Doctor:")
-    return (recommended_doctor)
+        recommended_doctor = find_recommended_doctor(patient_id, symptoms, disease, emergency)
+        print("Recommended Doctor:")
+        return (recommended_doctor)
+    else:
+        return "could not find"
 
 @app.get("/")
 def read_root():
