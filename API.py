@@ -387,6 +387,8 @@ def Recommend(patient_id):
         for i in collection.find({"id":patient_id}):
             print("i is",i)
             patient_data = i
+        if "ailments" not in patient_data:
+            return {"response","Try a different user"}
         input_symptoms = patient_data["ailments"][-1]["symptoms"]
         input_disease = patient_data["ailments"][-1]["name"]
         input_doctor = patient_data["ailments"][-1]["doctor"]["name"]
@@ -396,7 +398,7 @@ def Recommend(patient_id):
         input_medical_test = patient_data["ailments"][-1]["lab_test"]
         
         best_match_patient = find_best_match(patient_id,input_symptoms, input_disease, input_doctor, input_department, input_severity, input_medical_test)
-        return best_match_patient
+        return {"match score":best_match_patient,"patient_data":patient_data}
         if best_match_patient == "No Match":
             return "No match"
         patients_data = collection.find()
