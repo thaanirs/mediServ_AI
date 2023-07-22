@@ -298,29 +298,30 @@ def getUserQuery(patient_id):
         patient_data = i
     if patient_data == '':
         print("patient no foun")
-    if len(patient_data["ailments"]) > 1:
-        old = patient_data["ailments"][-2]["severity"]
-        new = patient_data["ailments"][-1]["severity"]
-    else:
-        new = patient_data["ailments"][-1]["severity"]
-        old = patient_data["ailments"][-1]["severity"]
-    trait = patient_data["ailments"][-1]['name']
-    change = compare(old,new)
-    print(change)
-    age = 45
-    ifgender = ''
-    ifage=''
-    if age < 30:
-        ifage = 'young '
-    elif age> 60 :
-        ifage = 'old'
-    else:
-        ifage = 'middle aged'
-    if change >=0:
-        userquery = random.choice((change_bh['positive'])) + " {} ".format(trait) + "for  {} {}".format(ifage,ifgender) 
-    elif change < 0:
-            userquery = random.choice(change_bh['negative']) + " {} ".format(trait)
-    return (userquery)
+    if "ailments" in patient_data:
+        if len(patient_data["ailments"]) > 1:
+            old = patient_data["ailments"][-2]["severity"]
+            new = patient_data["ailments"][-1]["severity"]
+        else:
+            new = patient_data["ailments"][-1]["severity"]
+            old = patient_data["ailments"][-1]["severity"]
+        trait = patient_data["ailments"][-1]['name']
+        change = compare(old,new)
+        print(change)
+        age = 45
+        ifgender = ''
+        ifage=''
+        if age < 30:
+            ifage = 'young '
+        elif age> 60 :
+            ifage = 'old'
+        else:
+            ifage = 'middle aged'
+        if change >=0:
+            userquery = random.choice((change_bh['positive'])) + " {} ".format(trait) + "for  {} {}".format(ifage,ifgender) 
+        elif change < 0:
+                userquery = random.choice(change_bh['negative']) + " {} ".format(trait)
+        return (userquery)
     
 
 def Notify(patient_id,min_len=100,max_len=500):
@@ -433,7 +434,7 @@ def Recommend(patient_id):
         # return {"match score":best_match_patient,"patient_data":patient_data}
         # return recommendedpat
         print("Best Match:")
-        return (recommendedpat.to_dict())
+        return (recommendedpat)
     # except KeyError:
     #     print("Insufficient data")
 
