@@ -199,7 +199,7 @@ def mainBot(query):
         print("response is",response)
         chatHistory.append(response[response.rfind("<|user|>"):])
         print(chatHistory)
-        # response = response[response.rfind("<|ai|>")+len("<|ai|>"):]
+        response = response[response.rfind("<|ai|>")+len("<|ai|>"):]
         return {"response":response}
     except :
         return {"response":'Sorry i could not understand you'}
