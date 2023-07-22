@@ -93,9 +93,6 @@ model_intro = {
     "Intro 1":
 "Beep! Your health comes first. Stay informed and cared for with our medical phone notifications."
 
-,"Intro 2":
-"Buzz, buzz! Our medical phone notifications are your personalized health assistants, always by your side."
-
 ,"Intro 3":
 "Stay on top of your medical needs with the gentle reminders of our health-focused phone notifications."
 
@@ -283,7 +280,8 @@ def Notify(patient_id):
     print(change)
     # return {"response":"hello"}
     trait=''
-    if change >0:
+    userquery=''
+    if change >=0:
         # choose random intro
         userquery = random.choice((change_bh['positive'])) + "{}".format(trait)
         # model.gen(userquery,)
