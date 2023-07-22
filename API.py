@@ -133,8 +133,8 @@ class not_item(BaseModel):
     # current : Optional[str]
     # old:Optional[str]
     # trait:Optional[str]
-    min_len : Optional[int] = 150
-    max_len : Optional[int] = 1024
+    min_len : Optional[int] 
+    max_len : Optional[int]
     patient_id : int
 
 class art_item(BaseModel):
@@ -269,7 +269,7 @@ def compare(current,past):
 #     except :
 #         return {"headline":headline,"article" : ""}
 
-def Notify(patient_id,min_len,max_len):
+def Notify(patient_id,min_len=100,max_len=500):
     print("notify called")
     # print(patient_id)
     # patient_data = collection.find({"id":patient_id})
