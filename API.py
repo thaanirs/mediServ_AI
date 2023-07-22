@@ -333,7 +333,8 @@ def Notify(patient_id,min_len,max_len):
         return {"headline":headline,"article" : ""}
 
 def find_best_match(Id,input_symptoms, input_disease, input_doctor, input_department, input_severity, input_medical_test):
-    patients_data = collection.find() 
+    print("called here as well")
+    patients_data = collection.find()
     input_data = {
         "id":Id,
         'symptoms': input_symptoms,
@@ -353,29 +354,46 @@ def find_best_match(Id,input_symptoms, input_disease, input_doctor, input_depart
     similarity_percentages = []
     for patient_data in patients_data:
         print(patient_data)
-        if patient_data["id"] != input_data["id"]:
+        if patient_data["id"] != input_data["id"] and patient_data["id"] not in [0,4,5,8]:
             patient_scores = []
-            for past_disease in [patient_data['ailments'][-1]["name"]]:
-                symptom_score = fuzz.token_set_ratio(','.join(input_data['symptoms']), ','.join(past_disease["ailments"][-1]['symptoms']))
-                disease_score = fuzz.token_sort_ratio(input_data['disease_name'], past_disease['ailments'][-1]["name"])
-                doctor_score = fuzz.token_sort_ratio(input_data['doctor_name'], past_disease["ailments"][-1]['doctor']["name"])
-                department_score = fuzz.token_sort_ratio(input_data['department'], past_disease["ailments"][-1]['doctor']["type"])
-                severity_score = fuzz.token_sort_ratio(input_data['severity'], past_disease['ailments'][-1]["severity"])
-                medical_tests_score = fuzz.token_set_ratio(','.join(input_data['medical_tests']), ','.join(past_disease['lab_tests']))
-                total_score = (symptom_score + disease_score + doctor_score + department_score + severity_score + medical_tests_score) / 6
-                patient_scores.append(total_score)
+            # for past_disease in [patient_data]:
+            a = ','.join(input_data['symptoms'])
+            try:
+                b = ','.join(patient_data["ailments"][-1]['symptoms'])
+            except  :
+                continue
+            # except TypeError:
+            #     continue
+            symptom_score = fuzz.token_set_ratio(a, b)
+            disease_score = fuzz.token_sort_ratio(input_data['disease_name'], patient_data['ailments'][-1]["name"])
+            doctor_score = fuzz.token_sort_ratio(input_data['doctor_name'], patient_data["ailments"][-1]['doctor']["name"])
+            department_score = fuzz.token_sort_ratio(input_data['department'], patient_data["ailments"][-1]['doctor']["type"])
+            severity_score = fuzz.token_sort_ratio(input_data['severity'], patient_data['ailments'][-1]["severity"])
+            c=','.join(input_data['medical_tests'])
+            # for i in range(len(patient_data["ailments"][-1]['lab_test'])):
+            #     if patient_data["ailments"][-1]['lab_test'][i] == None:
+            #         patient_data["ailments"][-1]['lab_test'][i]=""
+            if None in patient_data["ailments"][-1]['lab_test']:
+                continue
+            d =','.join(patient_data["ailments"][-1]['lab_test'])
+            medical_tests_score = fuzz.token_set_ratio(c, d)
+            total_score = (symptom_score + disease_score + doctor_score + department_score + severity_score + medical_tests_score) / 6
+            patient_scores.append(total_score)
             similarity_percentages.append(max(patient_scores))
 
+    # print("asdasdad")
     print(similarity_percentages)
-    best_match_index = similarity_percentages.index(max(similarity_percentages))
-    if max(similarity_percentages) < 70:
+    # return similarity_percentages
+    max_sim =max(similarity_percentages) 
+    print(max_sim)
+    if max_sim< 70:
       return "No Match"
-    best_match_patient = patients_data[best_match_index]
-
-    return best_match_patient
+    return similarity_percentages
+    
 
 def Recommend(patient_id):
     # try:
+        print("called here")
         patient_data = dict()
         for i in collection.find({"id":patient_id}):
             print("i is",i)
@@ -389,8 +407,12 @@ def Recommend(patient_id):
         input_medical_test = patient_data["ailments"][-1]["lab_test"]
         
         best_match_patient = find_best_match(patient_id,input_symptoms, input_disease, input_doctor, input_department, input_severity, input_medical_test)
+        if best_match_patient == "No Match":
+            return "No match"
+        patients_data = collection.find()
+        recommendedpat = patients_data[best_match_patient.index(max(best_match_patient))]
         print("Best Match:")
-        return (best_match_patient)
+        return (recommendedpat)
     # except KeyError:
     #     print("Insufficient data")
 
@@ -426,4 +448,5 @@ async def notify(item:not_item):
 
 @app.post("/recommend/")
 async def recommend(item:recommend_item):
+    print("called")
     return Recommend(item.patient_id)
