@@ -138,6 +138,9 @@ model_intro = {
 
 ,"Intro 10":
 "Your health, our priority. Trust our medical phone notifications to keep you in the pink of health."
+
+,"Intro 10":
+"Your health, our priority. Trust our medical phone notifications to keep you in the pink of health."
 }
 
 change_bh = {
@@ -326,6 +329,7 @@ def getUserQuery(patient_id):
 
 def Notify(patient_id,min_len=100,max_len=500):
     headline = random.choice(list(model_intro.values()))
+    headline = list(model_intro.values())[min_len%10]
     try:
         userquery = getUserQuery(patient_id)
     except:
