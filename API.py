@@ -24,7 +24,28 @@ app.add_middleware(
 client = pymongo.MongoClient("mongodb+srv://vedant11:vedant11@gathertube.zku14hn.mongodb.net/")
 db = client["test"]
 collection = db['user_data']
-
+# df = {
+#     'doctor_name': [],
+#     'id': [],
+#     'rating': [],
+#     'distance': [],
+#     'slots': [],
+#     'department': []
+# }
+# for i in collection.find():
+#         try:
+#                 df["doctor_name"].append(i["ailments"][-1]["doctor"]["name"])
+#                 df["id"].append(i["id"])
+#                 df["rating"].append(i["ailments"][-1]["doctor"]["rating"])
+#                 df["distance"].append(random.randrange(0,5))
+#                 t =random.randint(1,12)
+#                 slot = random.choice(['AM','PM'])
+#                 df["slots"].append("{}{} - {}{}".format(t,slot,t+2,slot))
+#                 df["department"].append(i["ailments"][-1]["doctor"]["type"])
+#         except KeyError:
+#                 continue
+# for i in df.keys():
+#     print(len(df[i]))
 
 config = Config(yaml_path='./example_train_config.yaml')
 
@@ -408,6 +429,34 @@ def Recommend(patient_id):
     # except KeyError:
     #     print("Insufficient data")
 
+def find_recommended_doctor(patient_id, symptoms, disease, emergency):
+    # global df
+    df = pd.read_csv("./data.csv")
+    print(type(df))
+    df = pd.DataFrame(df)
+    matching_doctors = df[
+        (df['department'] == disease) |
+        (df['department'].apply(lambda x: fuzz.token_set_ratio(disease, x)) > 70)
+    ]
+    # print(df.dep)
+    if emergency:
+        recommended_doctor = matching_doctors.sort_values(by='distance').iloc[0]
+    else:
+        matching_doctors['symptom_score'] = matching_doctors['doctor_name'].apply(lambda x: fuzz.token_set_ratio(','.join(symptoms), x))
+        recommended_doctor = matching_doctors.sort_values(by=['symptom_score', 'rating'], ascending=[False, False]).iloc[0]
+
+    return recommended_doctor
+
+def recRec(patient_id):
+    patient_id = 1
+    symptoms = ['fever', 'cough']
+    disease = 'Internal Medicine'
+    emergency = False
+
+    recommended_doctor = find_recommended_doctor(patient_id, symptoms, disease, emergency)
+    print("Recommended Doctor:")
+    return (recommended_doctor)
+
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
@@ -442,3 +491,7 @@ async def notify(item:not_item):
 async def recommend(item:recommend_item):
     print("called")
     return Recommend(item.patient_id)
+
+@app.post("/rec/")
+async def Rec(item:recommend_item):
+    return recRec(item.patient_id)
