@@ -199,7 +199,7 @@ def mainBot(query):
         print("response is",response)
         chatHistory.append(response[response.rfind("<|user|>"):])
         print(chatHistory)
-        response = response[response.rfind("<|ai|>")+len("<|ai|>"):]
+        # response = response[response.rfind("<|ai|>")+len("<|ai|>"):]
         return {"response":response}
     except :
         return {"response":'Sorry i could not understand you'}
@@ -425,6 +425,8 @@ def Recommend(patient_id):
             return "No match"
         patients_data = collection.find()
         recommendedpat = patients_data[best_match_patient.index(max(best_match_patient))]
+        print("match",recommendedpat)
+        return recommendedpat
         print("Best Match:")
         return (recommendedpat)
     # except KeyError:
