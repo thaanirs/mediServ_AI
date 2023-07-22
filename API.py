@@ -133,14 +133,14 @@ class not_item(BaseModel):
     # current : Optional[str]
     # old:Optional[str]
     # trait:Optional[str]
-    min_len : Optional[int] 
-    max_len : Optional[int]
+    min_len : int 
+    max_len : int
     patient_id : int
 
 class art_item(BaseModel):
     keyword : str
-    min_len : Optional[int] = 150
-    max_len : Optional[int] = 1024
+    min_len : Optional[int]
+    max_len : Optional[int] 
 
 class recommend_item(BaseModel):
     # input_symptoms:str 
@@ -269,17 +269,14 @@ def compare(current,past):
 #     except :
 #         return {"headline":headline,"article" : ""}
 
-def Notify(patient_id,min_len=100,max_len=500):
+def getUserQuery(patient_id):
     print("notify called")
-    # print(patient_id)
-    # patient_data = collection.find({"id":patient_id})
     patient_data=''
     print(patient_id)
     for i in collection.find({"id":patient_id}):
         patient_data = i
     if patient_data == '':
         print("patient no foun")
-    # print(patient_data)
     if "ailments" in patient_data:
         if len(patient_data["ailments"]) > 1:
             old = patient_data["ailments"][-2]["severity"]
@@ -287,35 +284,27 @@ def Notify(patient_id,min_len=100,max_len=500):
         else:
             new = patient_data["ailments"][-1]["severity"]
             old = patient_data["ailments"][-1]["severity"]
-
-
-    # print(patient_data)
     trait = patient_data["ailments"][-1]['name']
-    # print(trait)
-    headline = random.choice(list(model_intro.values()))
-    # print(patient_data)
     change = compare(old,new)
     print(change)
     age = 45
     ifgender = ''
     ifage=''
-    # ifinterest=''
-    # ifdisease=''
-    # ifseverity=''
-    # for  aged age gender with severity disease
     if age < 30:
         ifage = 'young '
     elif age> 60 :
         ifage = 'old'
     else:
         ifage = 'middle aged'
-    
-    
     if change >=0:
         userquery = random.choice((change_bh['positive'])) + " {} ".format(trait) + "for  {} {}".format(ifage,ifgender) 
     elif change < 0:
             userquery = random.choice(change_bh['negative']) + " {} ".format(trait)
-    print(userquery)
+    return (userquery)
+
+def Notify(patient_id,min_len=100,max_len=500):
+    headline = random.choice(list(model_intro.values()))
+    userquery = getUserQuery(patient_id)
     try :
         global tokenizer_art, model_art
         inputs = tokenizer_art(userquery, return_tensors="pt")
@@ -407,6 +396,7 @@ def Recommend(patient_id):
         input_medical_test = patient_data["ailments"][-1]["lab_test"]
         
         best_match_patient = find_best_match(patient_id,input_symptoms, input_disease, input_doctor, input_department, input_severity, input_medical_test)
+        return best_match_patient
         if best_match_patient == "No Match":
             return "No match"
         patients_data = collection.find()
